@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to web Pages
 
 on:
   push:
@@ -8,11 +8,11 @@ on:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
+# Allow only multiple concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: true
