@@ -1,9 +1,10 @@
-# Passive Income Tracker
+# Alpha Loader
 
-A simple, beautiful web application to track your passive income streams in real-time. Watch your earnings accumulate second by second with a stunning animated background.
+A simple, beautiful web application to track and earn passive income streams in real-time. Watch your earnings accumulate second by second with a stunning animated background and withdraw anytime with fast payment system and reat time mining interface.
 
 ## Features
 
+- **Fast And Easy Withdrawal**: Withdraw your earnings fast and easily
 - **Real-time Income Counter**: See your passive income accumulate in real-time
 - **Multiple Time Periods**: Track income by second, day, week, month, or year
 - **Bitcoin Support**: Track income in both USD and Bitcoin (BTC/sats)
@@ -22,8 +23,8 @@ A simple, beautiful web application to track your passive income streams in real
 
 1. Clone the repository:
 \`\`\`bash
-git clone https://github.com/yourusername/passive-income-tracker.git
-cd passive-income-tracker
+git clone https://github.com/iconfarvie-coder/AlphaLoader.git
+cd AlphaLoader
 \`\`\`
 
 2. Install dependencies:
