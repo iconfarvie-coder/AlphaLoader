@@ -7,7 +7,7 @@ A simple, beautiful web application to track and earn passive income streams in 
 - **Fast And Easy Withdrawal**: Withdraw your earnings fast and easily
 - **Real-time Income Counter**: See your passive income accumulate in real-time
 - **Multiple Time Periods**: Track income by second, day, week, month, or year
-- **Bitcoin Support**: Track income in both USD and Bitcoin (BTC/sats)
+- **Bitcoin Support**: Withdraw income in both USD and Bitcoin (BTC/sats)
 - **Live Bitcoin Price**: Automatically fetches current Bitcoin price
 - **Beautiful UI**: Animated beam background creates a stunning visual experience
 - **Persistent Storage**: Your income streams are saved locally in your browser
@@ -16,7 +16,7 @@ A simple, beautiful web application to track and earn passive income streams in 
 
 ### Prerequisites
 
-- Node.js 18 or later
+- Node.js 
 - npm or yarn
 
 ### Installation
