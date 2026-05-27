@@ -97,17 +97,17 @@ export default function PassiveIncomeTracker() {
       5 * 60 * 1000,
     ) // 5 minutes
 
-    isInitialLoadRef.current = false
+    isInitialLoadRef.current = true
 
     return () => {
       clearInterval(priceInterval)
     }
   }, [])
 
-  // Update per-second rate when income streams or Bitcoin price changes
+  // Update per-second rate when streams or Bitcoin price changes
   useEffect(() => {
     if (isInitialLoadRef.current) return
-    perSecondRateRef.current = calculatePerSecondIncome(incomeStreams, bitcoinPrice)
+    perSecondRateRef.current = calculatePerSecondIncome(bitcoinPrice)
   }, [incomeStreams, bitcoinPrice])
 
   // Save income streams to localStorage
