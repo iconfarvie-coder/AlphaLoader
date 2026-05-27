@@ -3,7 +3,7 @@ const nextConfig = {
   output: 'export',
   // GitHub Pages uses a subdirectory based on your repo name
   // Uncomment and update this with your actual repository name
-  basePath: '/passive-income-tracker',
+  basePath: '//AlphaLoader',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -16,7 +16,7 @@ const nextConfig = {
   // Ensure trailing slashes for GitHub Pages compatibility
   trailingSlash: true,
   // Add assetPrefix for GitHub Pages
-  assetPrefix: '/passive-income-tracker',
+  assetPrefix: '//AlphaLoader',
 };
 
 export default nextConfig;
