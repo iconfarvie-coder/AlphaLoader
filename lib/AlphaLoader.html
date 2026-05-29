@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha Card Core - Security & Issuing Matrix</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --font-god-header: 'Orbitron', -apple-system, sans-serif;
+            --font-god-mono: 'Share Tech Mono', monospace;
+            
+            /* Theme Configurations */
+            --bg-dark: #020617;
+            --panel-bg: #0f172a;
+            --border-color: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --success: #10b981;
+            --error: #f43f5e;
+            --warning: #f59e0b;
+        }
+
+        body.theme-amber { --accent: #f59e0b; --accent-glow: rgba(245, 158, 11, 0.3); }
+        body.theme-emerald { --accent: #10b981; --accent-glow: rgba(16, 185, 129, 0.3); }
+        body.theme-crimson { --accent: #e11d48; --accent-glow: rgba(225, 29, 72, 0.3); }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-god-mono);
+            letter-spacing: 0.05em;
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 1400px; }
+        header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 1.5rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: var(--font-god-header);
+            font-size: 2.6rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #fff;
+            text-shadow: 0 0 10px var(--accent-glow);
+            background: linear-gradient(to right, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2, h3 { font-family: var(--font-god-header); font-weight: 700; text-transform: uppercase; color: #ffffff; margin-bottom: 1rem; }
+        .subtitle { color: var(--text-muted); margin-top: 0.5rem; font-size: 1.1rem; }
+        
+        .auth-status-bar {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.02);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .grid-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1.5rem;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .panel::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+        .tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+        .tab-btn {
+            background: none; border: 1px solid transparent; color: var(--text-muted); padding: 0.5rem 1rem;
+            cursor: pointer; font-family: var(--font-god-header); font-size: 0.9rem; font-weight: 700; text-transform: uppercase;
+        }
+        .tab-btn.active { color: var(--accent); border: 1px solid var(--border-color); border-bottom: 1px solid var(--panel-bg); background-color: rgba(255,255,255,0.02); margin-bottom: -1px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .input-group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; }
+        input, select, textarea {
+            width: 100%; background-color: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main);
+            padding: 0.75rem; border-radius: 2px; font-size: 1rem; font-family: var(--font-god-mono); outline: none;
+        }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 5px var(--accent-glow); }
+
+        .inline-inputs { display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; }
+        .grid-3-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+
+        .btn {
+            width: 100%; padding: 0.75rem; border-radius: 2px; font-weight: 700; font-family: var(--font-god-header);
+            text-transform: uppercase; cursor: pointer; border: none; transition: all 0.2s; font-size: 0.95rem;
+        }
+        .btn-primary { background-color: var(--accent); color: var(--bg-dark); box-shadow: 0 0 10px var(--accent-glow); }
+        .btn-primary:hover { opacity: 0.9; box-shadow: 0 0 15px var(--accent); }
+        .btn-secondary { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main); margin-top: 0.5rem; }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-danger { background-color: transparent; border: 1px solid var(--error); color: var(--error); }
+        .btn-danger:hover { background-color: var(--error); color: #fff; }
+
+        textarea { height: 140px; resize: none; }
+
+        /* VM Console Framework */
+        .vm-console { display: flex; flex-direction: column; height: 350px; background-color: var(--bg-dark); border: 1px solid var(--border-color); margin-top: 1rem; }
+        .vm-log { flex-grow: 1; padding: 1rem; overflow-y: auto; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .log-sys { color: var(--accent); }
+        .log-success { color: var(--success); }
+        .log-err { color: var(--error); }
+        .log-warn { color: var(--warning); }
+
+        .status-badge { display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.8rem; font-weight: bold; border-radius: 2px; text-transform: uppercase; }
+        .badge-active { background: rgba(16,185,129,0.2); color: var(--success); border: 1px solid var(--success); }
+        .badge-frozen { background: rgba(244,63,94,0.2); color: var(--error); border: 1px solid var(--error); }
+
+        /* Auth Architecture Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .auth-box {
+            background: var(--panel-bg); border: 2px solid var(--accent); padding: 2.5rem; width: 100%; max-width: 450px;
+            box-shadow: 0 0 30px var(--accent-glow); text-align: center; border-radius: 4px;
+        }
+        .auth-providers { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+        .btn-provider {
+            display: flex; align-items: center; justify-content: center; gap: 0.75rem; background: var(--bg-dark);
+            border: 1px solid var(--border-color); color: #fff; text-align: left; padding: 0.75rem;
+            font-family: var(--font-god-header); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; cursor: pointer;
+        }
+        .btn-provider:hover { border-color: var(--accent); background: rgba(255,255,255,0.02); }
+        .auth-divider { display: flex; align-items: center; text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.8rem; }
+        .auth-divider::before, .auth-divider::after { content: ''; flex: 1; border-bottom: 1px dashed var(--border-color); }
+        .auth-divider:not(:empty)::before { margin-right: .55em; }
+        .auth-divider:not(:empty)::after { margin-left: .55em; }
+    </style>
+</head>
+<body>
+
+    <!-- Access Gate Modal Container -->
+    <div id="auth-gate" class="modal-overlay">
+        <div class="auth-box">
+            <h2>Crypt-Core Access</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Establish verification link identity</p>
+            
+            <div id="provider-selection" class="auth-providers">
+                <button class="btn-provider" onclick="triggerFederatedAuth('Google')">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.256-3.133C18.444 2.244 15.625 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.984 0-.743-.078-1.309-.174-1.926H12.24z"/></svg>
+                    Continue via Google Auth
+                </button>
+                <button class="btn-provider" onclick="triggerFederatedAuth('Apple')">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#FFF" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.57 2.95-1.38z"/></svg>
+                    Continue via Apple ID
+                </button>
+                
+                <div class="auth-divider">Or Identity Rails</div>
+                
+                <div class="input-group" style="text-align: left;">
+                    <label for="auth-phone">Phone Terminal Sequence</label>
+                    <input type="tel" id="auth-phone" placeholder="+234 800 000 0000">
+                </div>
+                <button class="btn btn-primary" onclick="requestPhoneOtp()">Transmit Access Token</button>
+            </div>
+
+            <!-- OTP Interface View -->
+            <div id="otp-verification" style="display: none; margin-top: 1rem;">
+                <p id="otp-message" style="font-size: 0.9rem; margin-bottom: 1.25rem; color: var(--text-muted);"></p>
+                <div class="input-group">
+                    <label for="auth-otp">Enter 6-Digit SMS Node Key</label>
+                    <input type="text" id="auth-otp" placeholder="XXXXXX" style="text-align: center; font-size: 1.3rem; letter-spacing: 0.3em;" maxlength="6">
+                </div>
+                <button class="btn btn-primary" onclick="verifyPhoneOtp()">Validate Identity Key</button>
+                <button class="btn btn-secondary" onclick="resetAuthGate()" style="font-size:0.8rem; padding: 0.4rem;">Return to Selection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <div class="container">
+        <header>
+            <h1>Alpha Card Core Matrix</h1>
+            <p class="subtitle">Secure Isolated Workstation Engine</p>
+            <div class="auth-status-bar">
+                <span>IDENTITY:</span>
+                <span id="user-display-tag" style="color: var(--accent); font-weight: bold;">UNVERIFIED</span>
+                <button onclick="logoutWorkspace()" style="background:none; border:none; color:var(--error); cursor:pointer; font-family:var(--font-god-mono); font-size:0.8rem; margin-left:5px;">[DISCONNECT]</button>
+            </div>
+        </header>
+
+        <main class="grid-layout">
+            <!-- Left Controls Section -->
+            <section class="panel">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('generator')">Issuing Gen</button>
+                    <button class="tab-btn" onclick="switchTab('security')">Security Toolkit</button>
+                    <button class="tab-btn" onclick="switchTab('settings')">App Settings</button>
+                </div>
+
+                <!-- Issuing Gen Core View -->
+                <div id="generator-view" class="tab-content active">
+                    <div class="input-group">
+                        <label for="bin-input">IIN / BIN Routing Prefix</label>
+                        <div class="inline-inputs">
+                            <input type="text" id="bin-input" placeholder="e.g., 506111" maxlength="8">
+                            <select id="network-select">
+                                <option value="custom">Auto-Detect Network</option>
+                                <option value="visa">Visa Core Network</option>
+                                <option value="mastercard">Mastercard Rail</option>
+                                <option value="amex">Amex Path</option>
+                                <option value="discover">Discover Route</option>
+                                <option value="verve">Verve Interbank</option>
+                                <option value="interswitch">Interswitch Node</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid-3-col">
+                        <div class="input-group">
+                            <label for="expiry-month">Month</label>
+                            <select id="expiry-month">
+                                <option value="random">Random</option>
+                                <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+                                <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                                <option value="07">07</option><option value="08">08</option><option value="09">09</option>
+                                <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="expiry-year">Year</label>
+                            <select id="expiry-year">
+                                <option value="random">Random</option>
+                                <option value="2026">2026</option><option value="2027">2027</option>
+                                <option value="2028">2028</option><option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cvv-input">Security CVV</label>
+                            <input type="text" id="cvv-input" placeholder="Random" maxlength="4">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="quantity-input">Batch Allocation Limit</label>
+                        <input type="number" id="quantity-input" value="5" min="1" max="50">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="generateBatch()">Execute Generation Routine</button>
+
+                    <div class="input-group" style="margin-top: 1.5rem;">
+                        <label>Output Dataset</label>
+                        <textarea id="output-text" readonly placeholder="Awaiting matrix generation configuration..."></textarea>
+                        <button class="btn btn-secondary" onclick="copyResults()">Copy Strings to Clipboard</button>
+                    </div>
+                </div>
+
+                <!-- Administrative Overrides View -->
+                <div id="security-view" class="tab-content">
+                    <h3>Lost/Stolen Overrides & Parameter Protection</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1.25rem; font-size:0.9rem;">Interact with local card memory registers to lock compromised vectors or rewrite PIN paths.</p>
+
+                    <div class="input-group">
+                        <label for="sec-pan">Target PAN Sequence</label>
+                        <input type="text" id="sec-pan" placeholder="Enter card data line">
+                    </div>
+
+                    <div class="grid-3-col" style="margin-bottom: 1rem;">
+                        <button class="btn btn-danger" onclick="modifyCardStatus('freeze')">Block / Freeze</button>
+                        <button class="btn btn-secondary" onclick="modifyCardStatus('unfreeze')">Re-Activate</button>
+                        <button class="btn btn-primary" onclick="triggerPinChange()">Change PIN</button>
+                    </div>
+
+                    <div id="pin-change-box" class="input-group" style="display:none; background: rgba(255,255,255,0.02); padding: 1rem; border: 1px dashed var(--border-color);">
+                        <label for="new-pin">Set New 4-Digit Security PIN</label>
+                        <div class="inline-inputs">
+                            <input type="password" id="new-pin" placeholder="****" maxlength="4">
+                            <button class="btn btn-primary" onclick="submitPinChange()">Commit Change</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Token Registry Real-Time Parameters</label>
+                        <div id="card-status-display" style="font-family: var(--font-god-mono); padding: 0.5rem 0; color: var(--text-muted);">No managed target selected. Execute a VM balance query to link data hooks.</div>
+                    </div>
+                </div>
+
+                <!-- Customization Settings View -->
+                <div id="settings-view" class="tab-content">
+                    <h3>Workspace Options</h3>
+                    <div class="settings-grid">
+                        <div class="input-group">
+                            <label for="setting-theme">UI Cyber Accent Prism</label>
+                            <select id="setting-theme" onchange="applyCustomSettings()">
+                                <option value="default">Cyber Cyan</option>
+                                <option value="theme-amber">Amber Warning</option>
+                                <option value="theme-emerald">Grid Emerald</option>
+                                <option value="theme-crimson">Crimson Threat</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="setting-latency">Simulated Core Delay</label>
+                            <select id="setting-latency">
+                                <option value="200">200ms (Hyper Speed)</option>
+                                <option value="750">750ms (Deep Sandbox)</option>
+                                <option value="1500">1500ms (Thorough Check)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="setting-delimiter">Matrix Separator Delimiter</label>
+                        <input type="text" id="setting-delimiter" value="|" maxlength="3" onchange="applyCustomSettings()">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Core Virtual Machine Section -->
+            <section class="panel">
+                <h2>Isolated Core Virtual Machine</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">Virtual ledger executing structural validation structures and live balance tracking simulations.</p>
+                
+                <div class="input-group" style="margin-top: 1rem;">
+                    <label for="vm-check-pan">PAN Real-Time Balance Query</label>
+                    <div class="inline-inputs">
+                        <input type="text" id="vm-check-pan" placeholder="Paste verification sequence string">
+                        <button class="btn btn-primary" onclick="runVmBalanceCheck()">Query VM Ledger</button>
+                    </div>
+                </div>
+
+                <div class="vm-console">
+                    <div id="vm-log" class="vm-log">
+                        <div class="log-sys">[VM RUNTIME]: Alpha-V Virtual Sub-Environment online.</div>
+                        <div class="log-sys">[VM RUNTIME]: Awaiting user identity authentication keys...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const INTERNAL_LEDGER = {};
+        let generatedOtpCode = null;
+
+        const NETWORK_PROFILES = {
+            visa: { prefix: ['4532', '4111', '4000'], length: 16 },
+            mastercard: { prefix: ['5121', '5432', '2221'], length: 16 },
+            amex: { prefix: ['3400', '3711'], length: 15 },
+            discover: { prefix: ['6011', '6500'], length: 16 },
+            verve: { prefix: ['5061', '5078', '6500'], length: 16 },
+            interswitch: { prefix: ['4305', '6280'], length: 16 }
+        };
+
+        // --- AUTHENTICATION FLOW IMPLEMENTATION ---
+        function triggerFederatedAuth(provider) {
+            writeToVmLog(`[AUTH]: Redirecting to third-party secure handshake path: ${provider} OAuth2...`, "log-sys");
+            setTimeout(() => {
+                const mockProfile = provider === 'Google' ? 'alpha_dev@gmail.com' : 'security_node@icloud.com';
+                completeAuthentication(mockProfile);
+                writeToVmLog(`[AUTH]: Shared token accepted via ${provider} secure pipeline. Identity verified.`, "log-success");
+            }, 600);
+        }
+
+        function requestPhoneOtp() {
+            const phone = document.getElementById('auth-phone').value.trim();
+            if(!phone || phone.length < 7) {
+                alert("Terminal Warning: Input sequence cannot be registered as a valid phone node pattern.");
+                return;
+            }
+            
+            // Build random 6 digit simulation token string
+            generatedOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            document.getElementById('provider-selection').style.display = 'none';
+            document.getElementById('otp-verification').style.display = 'block';
+            document.getElementById('otp-message').textContent = `Transmission dispatched to: ${phone}`;
+            
+            writeToVmLog(`[SMS SERVER]: Transmitting validation link payload node...`, "log-warn");
+            // Outputs key directly to log window to simulate reading your text message intercept
+            setTimeout(() => {
+                writeToVmLog(`[MOCK SMS CARRIER]: Outbound key generated -> ${generatedOtpCode}`, "log-warn");
+            }, 400);
+        }
+
+        function verifyPhoneOtp() {
+            const userOtp = document.getElementById('auth-otp').value.trim();
+            if(userOtp === generatedOtpCode && generatedOtpCode !== null) {
+                const phoneNum = document.getElementById('auth-phone').value.trim();
+                completeAuthentication(phoneNum);
+                writeToVmLog(`[AUTH]: Dynamic SMS token response validated. Network gate open.`, "log-success");
+            } else {
+                writeToVmLog(`[AUTH ERROR]: Invalid verification token parameters supplied. Signature mismatch.`, "log-err");
+                alert("Signature Error: Check transmission log output for exact verification code sync.");
+            }
+        }
+
+        function completeAuthentication(userIdentifier) {
+            document.getElementById('auth-gate').style.display = 'none';
+            document.getElementById('user-display-tag').textContent = userIdentifier.toUpperCase();
+            writeToVmLog(`[SYSTEM]: Identity verified. Interactive framework layers loaded.`, "log-success");
+        }
+
+        function resetAuthGate() {
+            generatedOtpCode = null;
+            document.getElementById('auth-otp').value = '';
+            document.getElementById('otp-verification').style.display = 'none';
+            document.getElementById('provider-selection').style.display = 'flex';
+        }
+
+        function logoutWorkspace() {
+            document.getElementById('user-display-tag').textContent = "UNVERIFIED";
+            document.getElementById('auth-gate').style.display = 'flex';
+            resetAuthGate();
+            writeToVmLog(`[SYSTEM]: Working authentication records discarded. Workspace locked.`, "log-warn");
+        }
+
+        // --- PRE-EXISTING OPERATIONS ENGINE ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId + '-view').classList.add('active');
+        }
+
+        function applyCustomSettings() {
+            const theme = document.getElementById('setting-theme').value;
+            document.body.className = '';
+            if(theme !== 'default') document.body.classList.add(theme);
+            writeToVmLog("[CONFIG]: Applied layout theme presets and custom variable limits.", "log-sys");
+        }
+
+        function writeToVmLog(text, className="log-sys") {
+            const logContainer = document.getElementById('vm-log');
+            const element = document.createElement('div');
+            element.className = className;
+            element.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            logContainer.appendChild(element);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function luhnCheck(num) {
+            let sum = 0; let shouldDouble = false;
+            for (let i = num.length - 1; i >= 0; i--) {
+                let digit = parseInt(num.charAt(i));
+                if (shouldDouble) { digit *= 2; if (digit > 9) digit -= 9; }
+                sum += digit; shouldDouble = !shouldDouble;
+            }
+            return (sum % 10 === 0);
+        }
+
+        function compileLuhnPattern(prefix, length) {
+            let output = prefix;
+            while (output.length < length - 1) output += Math.floor(Math.random() * 10).toString();
+            for (let i = 0; i <= 9; i++) {
+                if (luhnCheck(output + i.toString())) return output + i.toString();
+            }
+            return output + "0";
+        }
+
+        function generateBatch() {
+            const bin = document.getElementById('bin-input').value.replace(/\D/g, '');
+            const netKey = document.getElementById('network-select').value;
+            const monthSel = document.getElementById('expiry-month').value;
+            const yearSel = document.getElementById('expiry-year').value;
+            const count = parseInt(document.getElementById('quantity-input').value) || 5;
+            const delimiter = document.getElementById('setting-delimiter').value || "|";
+            const delay = parseInt(document.getElementById('setting-latency').value) || 200;
+
+            writeToVmLog(`[THREAD]: Running generation task algorithm. Allocation size: ${count}...`, "log-sys");
+
+            setTimeout(() => {
+                let rules = { prefix: ['4'], length: 16 };
+                if (netKey !== 'custom' && NETWORK_PROFILES[netKey]) rules = NETWORK_PROFILES[netKey];
+
+                let batchOutput = [];
+                for (let i = 0; i < count; i++) {
+                    let pref = bin || rules.prefix[Math.floor(Math.random() * rules.prefix.length)];
+                    let pan = compileLuhnPattern(pref, rules.length);
+                    let mm = monthSel === 'random' ? String(Math.floor(Math.random() * 12) + 1).padStart(2, '0') : monthSel;
+                    let yy = yearSel === 'random' ? String(Math.floor(Math.random() * 5) + 2026) : yearSel;
+                    let cvv = Array.from({length: rules.length === 15 ? 4 : 3}, () => Math.floor(Math.random() * 10)).join('');
+
+                    batchOutput.push(`${pan}${delimiter}${mm}${delimiter}${yy}${delimiter}${cvv}`);
+                    INTERNAL_LEDGER[pan] = { pin: "0000", status: "active", balance: (Math.random() * 14000).toFixed(2) };
+                }
+                document.getElementById('output-text').value = batchOutput.join('\n');
+                writeToVmLog(`[SUCCESS]: Allocation batch verification processing complete. Loaded vectors to memory stack.`, "log-success");
+            }, delay);
+        }
+
+        function runVmBalanceCheck() {
+            let fullLine = document.getElementById('vm-check-pan').value.trim();
+            let delimiter = document.getElementById('setting-delimiter').value || "|";
+            let pan = fullLine.split(delimiter)[0].replace(/\D/g, '');
+
+            if(!pan) { writeToVmLog("[ERROR]: Verification payload is unreadable or completely blank.", "log-err"); return; }
+            writeToVmLog(`[VM QUERY]: Mapping ledger balance configuration lookup tables for: ${pan.substring(0,6)}******`, "log-sys");
+
+            setTimeout(() => {
+                if (!luhnCheck(pan)) { writeToVmLog(`[INVALID]: Structural algorithmic validation parameters failed.`, "log-err"); return; }
+                let record = INTERNAL_LEDGER[pan] || { pin: "8888", status: "active", balance: (Math.random() * 3800).toFixed(2) };
+                INTERNAL_LEDGER[pan] = record;
+
+                if (record.status === 'frozen') {
+                    writeToVmLog(`[REJECTED]: Token ${pan.substring(0,4)}... blocked. Reason: ISOLATED/LOST/STOLEN status flag.`, "log-err");
+                    return;
+                }
+                writeToVmLog(`[VM LOG]: Query payload response valid. Dynamic balance: $${record.balance} USD.`, "log-success");
+                document.getElementById('sec-pan').value = pan;
+                updateSecurityDisplay(pan);
+            }, 350);
+        }
+
+        function updateSecurityDisplay(pan) {
+            const acc = INTERNAL_LEDGER[pan];
+            if(acc) {
+                document.getElementById('card-status-display').innerHTML = `PAN: ${pan.substring(0,4)}... | PIN: ${acc.pin} | State: <span class="status-badge ${acc.status === 'active' ? 'badge-active' : 'badge-frozen'}">${acc.status}</span>`;
+            }
+        }
+
+        function modifyCardStatus(action) {
+            const pan = document.getElementById('sec-pan').value.replace(/\D/g, '');
+            if(!pan || !INTERNAL_LEDGER[pan]) { writeToVmLog("[TOOLKIT ERROR]: Administration target token register row is empty.", "log-err"); return; }
+            INTERNAL_LEDGER[pan].status = action === 'freeze' ? 'frozen' : 'active';
+            writeToVmLog(`[OVERRIDE EFFECTIVE]: Token target status updated on registry map to: ${action.toUpperCase()}`, action === 'freeze' ? "log-warn" : "log-success");
+            updateSecurityDisplay(pan);
+        }
+
+        function triggerPinChange() { document.getElementById('pin-change-box').style.display = 'block'; }
+        function submitPinChange() {
+            const pan = document.getElementById('sec-pan').value.replace(/\D/g, '');
+            const pin = document.getElementById('new-pin').value.replace(/\D/g, '');
+            if(!pan || !INTERNAL_LEDGER[pan] || pin.length !== 4) { writeToVmLog("[TOOLKIT ERROR]: Execution signature payload incomplete.", "log-err"); return; }
+            INTERNAL_LEDGER[pan].pin = pin;
+            writeToVmLog(`[SECURITY]: Re-mapped cryptographic hardware token PIN offset maps safely.`, "log-success");
+            updateSecurityDisplay(pan);
+            document.getElementById('pin-change-box').style.display = 'none';
+            document.getElementById('new-pin').value = '';
+        }
+
+        function copyResults() {
+            const txt = document.getElementById('output-text'); txt.select(); document.execCommand('copy');
+            writeToVmLog("[SYSTEM]: Data strings copied into the clipboard interface array.", "log-sys");
+        }
+    </script>
+</body>
+</html>
